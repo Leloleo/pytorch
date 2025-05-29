@@ -62,7 +62,7 @@ from typing import (
     TypeVar,
     Union,
 )
-from typing_extensions import Literal, TypeIs
+from typing_extensions import Literal, TypeAlias, TypeGuard, TypeIs
 
 import torch
 import torch._functorch.config
@@ -1046,19 +1046,33 @@ def is_numpy_float_type(value):
     )
 
 
-def is_lru_cache_wrapped_function(value):
+def is_lru_cache_wrapped_function(
+    value: Any,
+) -> TypeGuard[functools._lru_cache_wrapper]:
     return isinstance(value, functools._lru_cache_wrapper) and is_function(
         inspect.getattr_static(value, "__wrapped__")
     )
 
 
-def is_function_or_wrapper(value):
+_FuncTypes: TypeAlias = Union[
+    types.FunctionType,
+    types.BuiltinFunctionType,
+    types.MethodDescriptorType,
+    types.WrapperDescriptorType,
+]
+
+
+def is_function_or_wrapper(
+    value: Any,
+) -> TypeIs[Union[_FuncTypes, torch._ops.OpOverloadPacket, torch._ops.OpOverload]]:
     return is_function(value) or isinstance(
         value, (torch._ops.OpOverloadPacket, torch._ops.OpOverload)
     )
 
 
-def is_function(value):
+def is_function(
+    value: Any,
+) -> TypeIs[_FuncTypes]:
     return isinstance(
         value,
         (
@@ -1090,7 +1104,17 @@ cmp_name_to_op_str_mapping = {
 }
 
 
-def is_wrapper_or_member_descriptor(value):
+def is_wrapper_or_member_descriptor(
+    value: Any,
+) -> TypeIs[
+    Union[
+        types.GetSetDescriptorType,
+        types.MethodDescriptorType,
+        types.WrapperDescriptorType,
+        types.MemberDescriptorType,
+        types.MethodWrapperType,
+    ]
+]:
     return isinstance(
         value,
         (
@@ -1141,7 +1165,7 @@ def istensor(obj):
     return istype(obj, tensor_list)
 
 
-def is_lazy_module(mod):
+def is_lazy_module(mod: Any) -> TypeIs[LazyModuleMixin]:
     return isinstance(mod, LazyModuleMixin)
 
 
